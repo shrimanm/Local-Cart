@@ -27,7 +27,15 @@ export function LanguageProvider({ children }: { children: ReactNode }): JSX.Ele
   }
 
   const t = (key: any): string => {
-    return (translations[language] as any)[key] || (translations.en as any)[key] || key
+    try {
+      if (typeof key !== 'string') {
+        return String(key || '')
+      }
+      const result = (translations[language] as any)[key] || (translations.en as any)[key] || key
+      return typeof result === 'string' ? result : String(result || key)
+    } catch (e) {
+      return String(key || '')
+    }
   }
 
   return (

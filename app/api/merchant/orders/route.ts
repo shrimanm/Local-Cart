@@ -24,60 +24,31 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Shop not found" }, { status: 404 })
     }
 
-    // Get orders for products from this shop
+    // Get booking orders for this shop
     const orders = await db
-      .collection("purchaseditems")
-      .aggregate([
-        {
-          $lookup: {
-            from: "products",
-            localField: "productId",
-            foreignField: "_id",
-            as: "product",
-          },
-        },
-        {
-          $match: {
-            "product.shopId": shop._id,
-          },
-        },
-        {
-          $lookup: {
-            from: "users",
-            localField: "userId",
-            foreignField: "_id",
-            as: "user",
-          },
-        },
-        {
-          $unwind: "$product",
-        },
-        {
-          $unwind: "$user",
-        },
-        {
-          $project: {
-            orderId: { $toString: "$_id" },
-            productName: "$product.name",
-            customerName: "$user.name",
-            customerPhone: "$user.phone",
-            quantity: 1,
-            price: 1,
-            totalAmount: { $multiply: ["$price", "$quantity"] },
-            status: { $ifNull: ["$status", "pending"] },
-            createdAt: 1,
-          },
-        },
-        {
-          $sort: { createdAt: -1 },
-        },
-      ])
+      .collection("orders")
+      .find({
+        shopId: shop._id,
+        type: "booking"
+      })
+      .sort({ createdAt: -1 })
       .toArray()
 
     const formattedOrders = orders.map((order) => ({
-      ...order,
       id: order._id.toString(),
-      _id: undefined,
+      orderId: order._id.toString(),
+      productId: order.productId.toString(),
+      productName: order.productName,
+      brand: order.brand,
+      productImage: order.productImage,
+      customerName: order.customerName,
+      customerPhone: order.customerPhone,
+      price: order.price,
+      size: order.size,
+      variant: order.variant,
+      color: order.color,
+      status: order.status,
+      createdAt: order.createdAt,
     }))
 
     return NextResponse.json({ orders: formattedOrders })
@@ -108,7 +79,7 @@ export async function PUT(request: NextRequest) {
 
     const db = await connectToDatabase()
 
-    const result = await db.collection("purchaseditems").updateOne(
+    const result = await db.collection("orders").updateOne(
       { _id: new ObjectId(orderId) },
       {
         $set: {

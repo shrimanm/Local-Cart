@@ -43,7 +43,16 @@ interface Product {
 interface Order {
   id: string
   orderId: string
-  totalAmount: number
+  productId: string
+  productName: string
+  brand: string
+  productImage: string
+  customerName: string
+  customerPhone: string
+  price: number
+  size: string
+  variant: string
+  color: string
   status: string
   createdAt: string
 }
@@ -75,6 +84,7 @@ function MerchantDashboardContent() {
   const router = useRouter()
   const { notification, showNotification, hideNotification } = useNotification()
   const { t } = useLanguage()
+  const [wsConnected, setWsConnected] = useState(false)
 
   useEffect(() => {
     if (authLoading) return
@@ -90,14 +100,33 @@ function MerchantDashboardContent() {
     }
 
     fetchDashboardData()
-  }, [user, token, router, authLoading])
+  }, [])
+  
+  const refreshOrders = async () => {
+    if (!token) return
+    
+    try {
+      const response = await fetch("/api/merchant/orders", {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setOrders(data.orders || [])
+        showNotification('Orders refreshed', 'success')
+      }
+    } catch (error) {
+      console.error('Refresh error:', error)
+    }
+  }
 
+
+  
   // Update stats whenever products or orders change
   useEffect(() => {
     const totalProducts = products.length
     const activeProducts = products.filter((p) => p.isActive).length
     const totalOrders = orders.length
-    const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0)
+    const totalRevenue = orders.reduce((sum, order) => sum + order.price, 0)
 
     setStats({
       totalProducts,
@@ -143,54 +172,42 @@ function MerchantDashboardContent() {
   }
 
   const fetchDashboardData = async () => {
+    if (!token) return
+    
+    setLoading(true)
     try {
-      // Fetch shop details
-      const shopResponse = await fetch("/api/merchant/shop", {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const [shopResponse, productsResponse, ordersResponse] = await Promise.all([
+        fetch("/api/merchant/shop", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("/api/merchant/products", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("/api/merchant/orders", { headers: { Authorization: `Bearer ${token}` } })
+      ])
+
       if (shopResponse.ok) {
         const shopData = await shopResponse.json()
         setShop(shopData.shop)
-        // Initialize form data
         setShopFormData({
-          name: shopData.shop.name || '',
-          description: shopData.shop.description || '',
-          address: shopData.shop.address || '',
-          town: shopData.shop.town || '',
-          contactDetails: shopData.shop.contactDetails || '',
-          locationUrl: shopData.shop.locationUrl || ''
+          name: shopData.shop?.name || '',
+          description: shopData.shop?.description || '',
+          address: shopData.shop?.address || '',
+          town: shopData.shop?.town || '',
+          contactDetails: shopData.shop?.contactDetails || '',
+          locationUrl: shopData.shop?.locationUrl || ''
         })
-        
-        // Fetch available towns
-        const townsResponse = await fetch('/api/admin/towns')
-        if (townsResponse.ok) {
-          const townsData = await townsResponse.json()
-          const townNames = townsData.towns.map((town: any) => town.name)
-          setAvailableTowns(townNames)
-        }
       }
 
-      // Fetch products
-      const productsResponse = await fetch("/api/merchant/products", {
-        headers: { Authorization: `Bearer ${token}` },
-      })
       if (productsResponse.ok) {
         const productsData = await productsResponse.json()
-        setProducts(productsData.products)
+        setProducts(productsData.products || [])
       }
 
-      // Fetch orders
-      const ordersResponse = await fetch("/api/merchant/orders", {
-        headers: { Authorization: `Bearer ${token}` },
-      })
       if (ordersResponse.ok) {
         const ordersData = await ordersResponse.json()
-        setOrders(ordersData.orders)
+        setOrders(ordersData.orders || [])
       }
-
-      // Stats will be calculated in useEffect when data changes
     } catch (error) {
       console.error("Error fetching dashboard data:", error)
+      setProducts([])
+      setOrders([])
     } finally {
       setLoading(false)
     }
@@ -355,7 +372,7 @@ function MerchantDashboardContent() {
 
         {/* Modern Tabs */}
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-          <Tabs defaultValue="products" className="">
+          <Tabs defaultValue={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('tab') || "products" : "products"} className="">
             <div className="border-b border-gray-100 px-6 pt-6">
               <TabsList className="bg-gray-50 rounded-xl p-1">
                 <TabsTrigger value="products" className="rounded-lg">{t('products')}</TabsTrigger>
@@ -383,46 +400,50 @@ function MerchantDashboardContent() {
                 ) : (
                   <div className="space-y-4">
                     {products.map((product) => (
-                      <div key={product.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border rounded-lg space-y-3 sm:space-y-0">
-                        <div className="flex-1">
-                          <h3 className="font-medium text-sm sm:text-base">{product.name}</h3>
-                          <p className="text-xs sm:text-sm text-gray-600">{product.category}</p>
-                          <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2">
-                            <span className="font-bold text-sm sm:text-base">{formatPrice(product.price)}</span>
-                            <span className="text-xs sm:text-sm text-gray-600">{t('stock')}: {product.stock}</span>
-                            <Badge variant={product.isActive ? "default" : "secondary"} className="text-xs">
-                              {product.isActive ? t('active') : t('inactive')}
-                            </Badge>
+                      <div key={product.id} className="border rounded-lg p-4 bg-white">
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex-1 min-w-0 mr-3">
+                            <h3 className="font-medium text-gray-900 truncate">{product.name}</h3>
+                            <p className="text-sm text-gray-600">{product.category}</p>
                           </div>
+                          <Badge variant={product.isActive ? "default" : "secondary"} className="text-xs flex-shrink-0">
+                            {product.isActive ? t('active') : t('inactive')}
+                          </Badge>
                         </div>
-                        <div className="flex space-x-2 self-end sm:self-center">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => router.push(`/product/${product.id}`)}
-                            title="View Product"
-                            className="p-2"
-                          >
-                            <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => router.push(`/merchant/products/edit/${product.id}?data=${encodeURIComponent(JSON.stringify(product))}`)}
-                            title="Edit Product"
-                            className="p-2"
-                          >
-                            <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleDeleteClick(product.id, product.name)}
-                            title="Delete Product"
-                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                          </Button>
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-3">
+                            <span className="font-bold text-lg">{formatPrice(product.price)}</span>
+                            <span className="text-sm text-gray-600">{t('stock')}: {product.stock}</span>
+                          </div>
+                          <div className="flex space-x-1 flex-shrink-0">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => router.push(`/product/${product.id}?from=merchant-products`)}
+                              title="View Product"
+                              className="p-2"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => router.push(`/merchant/products/edit/${product.id}?data=${encodeURIComponent(JSON.stringify(product))}`)}
+                              title="Edit Product"
+                              className="p-2"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleDeleteClick(product.id, product.name)}
+                              title="Delete Product"
+                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -434,7 +455,17 @@ function MerchantDashboardContent() {
 
           <TabsContent value="orders" className="p-6">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">{t('recentOrders')}</h3>
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">{t('recentOrders')}</h3>
+                <Button 
+                  onClick={refreshOrders}
+                  variant="outline"
+                  size="sm"
+                  className="rounded-xl"
+                >
+                  🔄 Refresh
+                </Button>
+              </div>
               <div>
                 {orders.length === 0 ? (
                   <div className="text-center py-8">
@@ -445,14 +476,52 @@ function MerchantDashboardContent() {
                 ) : (
                   <div className="space-y-4">
                     {orders.map((order) => (
-                      <div key={order.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div>
-                          <h3 className="font-medium">Order #{order.orderId}</h3>
-                          <p className="text-sm text-gray-600">{new Date(order.createdAt).toLocaleDateString()}</p>
+                      <div 
+                        key={order.id} 
+                        className="border rounded-xl p-4 bg-white shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                        onClick={() => router.push(`/product/${order.productId}?from=merchant-orders`)}
+                      >
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-900">{order.productName}</h3>
+                            <p className="text-sm text-gray-600">{order.brand}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold">{formatPrice(order.price)}</p>
+                            <Badge variant={order.status === "confirmed" ? "default" : "secondary"} className="text-xs">
+                              {order.status}
+                            </Badge>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-bold">{formatPrice(order.totalAmount)}</p>
-                          <Badge variant={order.status === "confirmed" ? "default" : "secondary"}>{order.status}</Badge>
+                        
+                        {/* Product Variants */}
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {order.size && (
+                            <span className="bg-gray-100 px-2 py-1 rounded text-xs">
+                              Size: {order.size}
+                            </span>
+                          )}
+                          {order.color && (
+                            <span className="bg-gray-100 px-2 py-1 rounded text-xs">
+                              Color: {order.color}
+                            </span>
+                          )}
+                          {order.variant && (
+                            <span className="bg-gray-100 px-2 py-1 rounded text-xs">
+                              {order.variant}
+                            </span>
+                          )}
+                        </div>
+                        
+                        {/* Customer Info */}
+                        <div className="flex justify-between items-center pt-2 border-t">
+                          <div>
+                            <p className="font-medium text-gray-900">{order.customerName}</p>
+                            <p className="text-sm text-gray-600">{order.customerPhone}</p>
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {new Date(order.createdAt).toLocaleDateString()}
+                          </div>
                         </div>
                       </div>
                     ))}

@@ -49,20 +49,13 @@ export async function GET(request: NextRequest) {
     let analytics = {}
 
     if (type === "overview" || type === "sales") {
-      // Sales Analytics
-      const salesPipeline = [
-        {
-          $lookup: {
-            from: "products",
-            localField: "productId",
-            foreignField: "_id",
-            as: "product",
-          },
-        },
+      // Sales Analytics - Include both purchased items and bookings
+      const bookingsPipeline = [
         {
           $match: {
-            "product.shopId": shop._id,
+            shopId: shop._id,
             createdAt: { $gte: startDate },
+            type: "booking"
           },
         },
         {
@@ -73,41 +66,34 @@ export async function GET(request: NextRequest) {
                 date: "$createdAt",
               },
             },
-            totalRevenue: { $sum: { $multiply: ["$price", "$quantity"] } },
+            totalRevenue: { $sum: "$price" },
             totalOrders: { $sum: 1 },
-            totalItems: { $sum: "$quantity" },
+            totalItems: { $sum: 1 },
           },
         },
         { $sort: { _id: 1 } },
       ]
 
-      const salesData = await db.collection("purchaseditems").aggregate(salesPipeline).toArray()
+      const salesData = await db.collection("orders").aggregate(bookingsPipeline).toArray()
 
-      // Total metrics
+      // Total metrics from bookings
       const totalMetrics = await db
-        .collection("purchaseditems")
+        .collection("orders")
         .aggregate([
           {
-            $lookup: {
-              from: "products",
-              localField: "productId",
-              foreignField: "_id",
-              as: "product",
-            },
-          },
-          {
             $match: {
-              "product.shopId": shop._id,
+              shopId: shop._id,
               createdAt: { $gte: startDate },
+              type: "booking"
             },
           },
           {
             $group: {
               _id: null,
-              totalRevenue: { $sum: { $multiply: ["$price", "$quantity"] } },
+              totalRevenue: { $sum: "$price" },
               totalOrders: { $sum: 1 },
-              totalItems: { $sum: "$quantity" },
-              avgOrderValue: { $avg: { $multiply: ["$price", "$quantity"] } },
+              totalItems: { $sum: 1 },
+              avgOrderValue: { $avg: "$price" },
             },
           },
         ])
@@ -119,26 +105,19 @@ export async function GET(request: NextRequest) {
       prevStartDate.setDate(startDate.getDate() - daysDiff)
 
       const prevMetrics = await db
-        .collection("purchaseditems")
+        .collection("orders")
         .aggregate([
           {
-            $lookup: {
-              from: "products",
-              localField: "productId",
-              foreignField: "_id",
-              as: "product",
-            },
-          },
-          {
             $match: {
-              "product.shopId": shop._id,
+              shopId: shop._id,
               createdAt: { $gte: prevStartDate, $lt: startDate },
+              type: "booking"
             },
           },
           {
             $group: {
               _id: null,
-              totalRevenue: { $sum: { $multiply: ["$price", "$quantity"] } },
+              totalRevenue: { $sum: "$price" },
               totalOrders: { $sum: 1 },
             },
           },

@@ -146,20 +146,82 @@ export async function POST(request: NextRequest) {
         productId: new ObjectId(productId),
       })
 
+      // Get order before deleting for WebSocket notification
+      const orderToDelete = await db.collection("orders").findOne({
+        userId: new ObjectId(decoded.userId),
+        productId: new ObjectId(productId),
+        type: "booking"
+      })
+      
+      // Remove corresponding order
+      await db.collection("orders").deleteOne({
+        userId: new ObjectId(decoded.userId),
+        productId: new ObjectId(productId),
+        type: "booking"
+      })
+      
+      // Notify merchant via WebSocket
+      if (orderToDelete) {
+        const { notifyShop } = await import('@/lib/websocket')
+        notifyShop(orderToDelete.shopId.toString(), {
+          type: 'ORDER_REMOVED',
+          orderId: orderToDelete._id.toString()
+        })
+      }
+
       return NextResponse.json({
         success: true,
         action: "removed",
         message: "Booking canceled",
       })
     } else {
+      // Get user details
+      const user = await db.collection("users").findOne({
+        _id: new ObjectId(decoded.userId)
+      })
+
       // Add to booked
-      await db.collection("booked").insertOne({
+      const bookingResult = await db.collection("booked").insertOne({
         userId: new ObjectId(decoded.userId),
         productId: new ObjectId(productId),
         size: size || null,
         variant: variant || null,
         color: color || null,
         createdAt: new Date(),
+      })
+
+      // Create order for merchant
+      const orderData = {
+        bookingId: bookingResult.insertedId,
+        userId: new ObjectId(decoded.userId),
+        productId: new ObjectId(productId),
+        shopId: product.shopId,
+        customerName: user?.name || "Unknown",
+        customerPhone: user?.phone || "Unknown",
+        productName: product.name,
+        brand: product.brand,
+        price: product.price,
+        productImage: product.images?.[0] || null,
+        size: size || null,
+        variant: variant || null,
+        color: color || null,
+        status: "booked",
+        type: "booking",
+        createdAt: new Date(),
+      }
+      
+      await db.collection("orders").insertOne(orderData)
+      
+      // Notify merchant via WebSocket
+      const { notifyShop } = await import('@/lib/websocket')
+      notifyShop(product.shopId.toString(), {
+        type: 'ORDER_ADDED',
+        order: {
+          ...orderData,
+          id: bookingResult.insertedId.toString(),
+          productId: productId,
+          shopId: product.shopId.toString()
+        }
       })
 
       return NextResponse.json({

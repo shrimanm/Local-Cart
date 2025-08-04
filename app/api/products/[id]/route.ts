@@ -67,11 +67,37 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     // Get shop information
     const shop = await db.collection("shops").findOne({ _id: product.shopId })
 
+    // Flatten variants if they have nested structure
+    let flattenedVariants = []
+    let flattenedSizes = []
+    
+    if (product.variants && Array.isArray(product.variants)) {
+      product.variants.forEach(variant => {
+        if (typeof variant === 'string') {
+          flattenedVariants.push(variant)
+        } else if (variant && variant.values && Array.isArray(variant.values)) {
+          flattenedVariants.push(...variant.values)
+        }
+      })
+    }
+    
+    if (product.sizes && Array.isArray(product.sizes)) {
+      product.sizes.forEach(size => {
+        if (typeof size === 'string') {
+          flattenedSizes.push(size)
+        } else if (size && size.values && Array.isArray(size.values)) {
+          flattenedSizes.push(...size.values)
+        }
+      })
+    }
+
     const transformedProduct = {
       ...product,
       id: product._id.toString(),
       shopId: product.shopId?.toString() || "",
       shopName: shop?.name || "Unknown Shop",
+      variants: flattenedVariants.length > 0 ? flattenedVariants : product.variants,
+      sizes: flattenedSizes.length > 0 ? flattenedSizes : product.sizes,
       _id: undefined,
     }
 

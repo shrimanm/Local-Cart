@@ -79,16 +79,14 @@ function AddProductPageContent() {
     subcategory: "",
     brand: "",
     images: [] as string[],
-    sizes: [] as string[],
-    variants: [] as string[],
-    variantType: "size" as string,
-    colors: [] as string[],
+    variants: [] as { type: string; values: string[]; colors?: string[] }[],
     stock: "",
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const [customSize, setCustomSize] = useState("")
-  const [customColor, setCustomColor] = useState("")
+  const [selectedVariantType, setSelectedVariantType] = useState("")
+  const [customVariantValue, setCustomVariantValue] = useState("")
+  const [selectedVariantColors, setSelectedVariantColors] = useState<string[]>([])
 
   const { user, token } = useAuth()
   const router = useRouter()
@@ -103,28 +101,53 @@ function AddProductPageContent() {
     }
   }, [user, router])
 
-  const handleVariantToggle = (variant: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      variants: prev.variants.includes(variant) ? prev.variants.filter((v) => v !== variant) : [...prev.variants, variant],
-    }))
-  }
-
-  const handleColorToggle = (color: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      colors: prev.colors.includes(color) ? prev.colors.filter((c) => c !== color) : [...prev.colors, color],
-    }))
-  }
-
-  const addCustomVariant = () => {
-    if (customSize && !formData.variants.includes(customSize)) {
-      setFormData((prev) => ({
-        ...prev,
-        variants: [...prev.variants, customSize],
-      }))
-      setCustomSize("")
+  const addVariant = () => {
+    if (!selectedVariantType) return
+    
+    const newVariant = {
+      type: selectedVariantType,
+      values: [],
+      colors: selectedVariantColors.length > 0 ? [...selectedVariantColors] : undefined
     }
+    
+    setFormData(prev => ({
+      ...prev,
+      variants: [...prev.variants, newVariant]
+    }))
+    
+    setSelectedVariantType("")
+    setSelectedVariantColors([])
+  }
+  
+  const removeVariant = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      variants: prev.variants.filter((_, i) => i !== index)
+    }))
+  }
+  
+  const addVariantValue = (variantIndex: number, value: string) => {
+    if (!value) return
+    
+    setFormData(prev => ({
+      ...prev,
+      variants: prev.variants.map((variant, i) => 
+        i === variantIndex 
+          ? { ...variant, values: [...variant.values, value] }
+          : variant
+      )
+    }))
+  }
+  
+  const removeVariantValue = (variantIndex: number, valueIndex: number) => {
+    setFormData(prev => ({
+      ...prev,
+      variants: prev.variants.map((variant, i) => 
+        i === variantIndex 
+          ? { ...variant, values: variant.values.filter((_, vi) => vi !== valueIndex) }
+          : variant
+      )
+    }))
   }
 
   const getVariantOptions = (type: string): string[] => {
@@ -135,21 +158,38 @@ function AddProductPageContent() {
         return ["64GB", "128GB", "256GB", "512GB", "1TB", "2TB"]
       case "color":
         return ["Black", "White", "Red", "Blue", "Green", "Yellow", "Pink", "Purple", "Gray", "Brown"]
-      case "capacity":
-        return ["500ml", "750ml", "1L", "1.5L", "2L", "100g", "250g", "500g", "1kg"]
+      case "RAM":
+        return ["4GB", "8GB", "16GB", "32GB", "64GB"]
+      case "material":
+        return ["Cotton", "Polyester", "Leather", "Metal", "Plastic", "Wood", "Glass"]
+      case "weight":
+        return ["100g", "250g", "500g", "1kg", "2kg", "5kg"]
+      case "quantity":
+        return ["1 piece", "2 pieces", "5 pieces", "10 pieces", "Pack of 12"]
+      case "flavour":
+        return ["Vanilla", "Chocolate", "Strawberry", "Mango", "Orange", "Mint"]
+      case "dimensions":
+        return ["Small", "Medium", "Large", "10x10cm", "20x20cm", "30x30cm"]
+      case "model":
+        return ["Basic", "Standard", "Premium", "Pro", "Elite"]
+      case "wattage":
+        return ["5W", "10W", "25W", "40W", "60W", "100W"]
       default:
         return []
     }
   }
+  
+  const variantTypes = [
+    "size", "storage", "color", "RAM", "material", "weight", 
+    "quantity", "flavour", "dimensions", "model", "wattage"
+  ]
 
-  const addCustomColor = () => {
-    if (customColor && !formData.colors.includes(customColor)) {
-      setFormData((prev) => ({
-        ...prev,
-        colors: [...prev.colors, customColor],
-      }))
-      setCustomColor("")
-    }
+  const handleVariantColorToggle = (color: string) => {
+    setSelectedVariantColors(prev => 
+      prev.includes(color) 
+        ? prev.filter(c => c !== color)
+        : [...prev, color]
+    )
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -364,132 +404,134 @@ function AddProductPageContent() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Ruler className="h-5 w-5" />
-                {t('productVariants')}
+                Product Variants
               </CardTitle>
-              <CardDescription>{t('configureVariants')}</CardDescription>
+              <CardDescription>Add multiple variant types with optional colors</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>{t('variantType')}</Label>
-                <Select value={formData.variantType} onValueChange={(value) => setFormData({ ...formData, variantType: value, variants: [] })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="size">{t('size')}</SelectItem>
-                    <SelectItem value="storage">{t('storage')}</SelectItem>
-                    <SelectItem value="color">{t('color')}</SelectItem>
-                    <SelectItem value="capacity">{t('capacity')}</SelectItem>
-                    <SelectItem value="none">{t('noVariants')}</SelectItem>
-                  </SelectContent>
-                </Select>
+            <CardContent className="space-y-6">
+              {/* Add New Variant */}
+              <div className="border rounded-lg p-4 bg-gray-50">
+                <h4 className="font-medium mb-3">Add New Variant Type</h4>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Variant Type</Label>
+                    <Select value={selectedVariantType} onValueChange={setSelectedVariantType}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select variant type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {variantTypes.map(type => (
+                          <SelectItem key={type} value={type}>
+                            {type.charAt(0).toUpperCase() + type.slice(1)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+
+                  
+                  <Button type="button" onClick={addVariant} disabled={!selectedVariantType}>
+                    Add Variant Type
+                  </Button>
+                </div>
               </div>
               
-              {formData.variantType && formData.variantType !== "none" && (
-                <>
-                  <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-                    {getVariantOptions(formData.variantType).map((variant) => (
-                      <Button
-                        key={variant}
-                        type="button"
-                        variant={formData.variants.includes(variant) ? "default" : "outline"}
-                        onClick={() => handleVariantToggle(variant)}
-                        className="h-12 text-xs"
-                      >
-                        {variant}
-                      </Button>
-                    ))}
-                  </div>
-
-                  <Separator />
-
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder={`Add custom ${formData.variantType}`}
-                      value={customSize}
-                      onChange={(e) => setCustomSize(e.target.value)}
-                      onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addCustomVariant())}
-                    />
-                    <Button type="button" onClick={addCustomVariant}>
-                      {t('add')}
+              {/* Existing Variants */}
+              {formData.variants.map((variant, variantIndex) => (
+                <div key={variantIndex} className="border rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <h4 className="font-medium capitalize">{variant.type}</h4>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => removeVariant(variantIndex)}
+                      className="text-red-600"
+                    >
+                      Remove
                     </Button>
                   </div>
-
-                  {formData.variants.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {formData.variants.map((variant) => (
-                        <Badge key={variant} variant="secondary" className="px-3 py-1">
-                          {variant}
-                          <button
-                            type="button"
-                            onClick={() => handleVariantToggle(variant)}
-                            className="ml-2 text-red-500 hover:text-red-700"
-                          >
-                            ×
-                          </button>
-                        </Badge>
-                      ))}
+                  
+                  {variant.colors && variant.colors.length > 0 && (
+                    <div className="mb-3">
+                      <Label className="text-sm text-gray-600">Colors:</Label>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {variant.colors.map(color => (
+                          <Badge key={color} variant="secondary" className="text-xs">
+                            {color}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
                   )}
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Colors */}
-          <Card className="bg-white rounded-2xl shadow-lg border border-gray-100">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Palette className="h-5 w-5" />
-                {t('availableColors')}
-              </CardTitle>
-              <CardDescription>{t('selectAvailableColors')}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
-                {commonColors.map((color) => (
-                  <Button
-                    key={color}
-                    type="button"
-                    variant={formData.colors.includes(color) ? "default" : "outline"}
-                    onClick={() => handleColorToggle(color)}
-                    className="h-12"
-                  >
-                    {color}
-                  </Button>
-                ))}
-              </div>
-
-              <Separator />
-
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Add custom color"
-                  value={customColor}
-                  onChange={(e) => setCustomColor(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addCustomColor())}
-                />
-                <Button type="button" onClick={addCustomColor}>
-                  {t('add')}
-                </Button>
-              </div>
-
-              {formData.colors.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {formData.colors.map((color) => (
-                    <Badge key={color} variant="secondary" className="px-3 py-1">
-                      {color}
-                      <button
-                        type="button"
-                        onClick={() => handleColorToggle(color)}
-                        className="ml-2 text-red-500 hover:text-red-700"
+                  
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                      {getVariantOptions(variant.type).map(option => (
+                        <Button
+                          key={option}
+                          type="button"
+                          size="sm"
+                          variant={variant.values.includes(option) ? "default" : "outline"}
+                          onClick={() => {
+                            if (variant.values.includes(option)) {
+                              const valueIndex = variant.values.indexOf(option)
+                              removeVariantValue(variantIndex, valueIndex)
+                            } else {
+                              addVariantValue(variantIndex, option)
+                            }
+                          }}
+                          className="text-xs"
+                        >
+                          {option}
+                        </Button>
+                      ))}
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder={`Add custom ${variant.type}`}
+                        value={customVariantValue}
+                        onChange={(e) => setCustomVariantValue(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault()
+                            addVariantValue(variantIndex, customVariantValue)
+                            setCustomVariantValue("")
+                          }
+                        }}
+                      />
+                      <Button 
+                        type="button" 
+                        onClick={() => {
+                          addVariantValue(variantIndex, customVariantValue)
+                          setCustomVariantValue("")
+                        }}
                       >
-                        ×
-                      </button>
-                    </Badge>
-                  ))}
+                        Add
+                      </Button>
+                    </div>
+                    
+                    {variant.values.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {variant.values.map((value, valueIndex) => (
+                          <Badge key={valueIndex} variant="secondary" className="px-3 py-1">
+                            {value}
+                            <button
+                              type="button"
+                              onClick={() => removeVariantValue(variantIndex, valueIndex)}
+                              className="ml-2 text-red-500 hover:text-red-700"
+                            >
+                              ×
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
+              ))}
             </CardContent>
           </Card>
 
