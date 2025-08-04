@@ -68,8 +68,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const shop = await db.collection("shops").findOne({ _id: product.shopId })
 
     // Flatten variants if they have nested structure
-    let flattenedVariants = []
-    let flattenedSizes = []
+    let flattenedVariants: string[] = []
+    let flattenedSizes: string[] = []
     
     if (product.variants && Array.isArray(product.variants)) {
       product.variants.forEach(variant => {
