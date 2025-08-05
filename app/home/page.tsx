@@ -100,6 +100,7 @@ function HomePageContent() {
       fetchUserTown()
       fetchWishlist()
       fetchFilterOptions()
+      loadFilters()
     }
   }, [user, token])
 
@@ -118,9 +119,39 @@ function HomePageContent() {
 
   useEffect(() => {
     if (user && user.name && selectedTowns.length > 0) {
+      saveFilters()
       fetchProducts()
     }
   }, [selectedCategory, sortBy, searchQuery, selectedBrands, selectedShops, selectedTowns, selectedPriceRanges, customMinPrice, customMaxPrice, selectedCategories, pagination.page])
+
+  const saveFilters = () => {
+    const filters = {
+      searchQuery, selectedCategory, selectedBrands, selectedShops, selectedTowns,
+      selectedCategories, selectedPriceRanges, customMinPrice, customMaxPrice, sortBy
+    }
+    sessionStorage.setItem('homeFilters', JSON.stringify(filters))
+  }
+
+  const loadFilters = () => {
+    try {
+      const saved = sessionStorage.getItem('homeFilters')
+      if (saved) {
+        const filters = JSON.parse(saved)
+        setSearchQuery(filters.searchQuery || '')
+        setSelectedCategory(filters.selectedCategory || 'all')
+        setSelectedBrands(filters.selectedBrands || [])
+        setSelectedShops(filters.selectedShops || [])
+        if (filters.selectedTowns?.length) setSelectedTowns(filters.selectedTowns)
+        setSelectedCategories(filters.selectedCategories || [])
+        setSelectedPriceRanges(filters.selectedPriceRanges || [])
+        setCustomMinPrice(filters.customMinPrice || '')
+        setCustomMaxPrice(filters.customMaxPrice || '')
+        setSortBy(filters.sortBy || 'rating')
+      }
+    } catch (e) {}
+  }
+
+
 
   // Refetch filter options when towns change
   useEffect(() => {
@@ -337,13 +368,7 @@ function HomePageContent() {
     }
   }
 
-  useEffect(() => {
-    // Update search query and category when URL params change
-    const urlSearch = searchParams.get("search") || ""
-    const urlCategory = searchParams.get("category") || "all"
-    setSearchQuery(urlSearch)
-    setSelectedCategory(urlCategory)
-  }, [searchParams])
+
 
   const resetFilters = () => {
     setSearchQuery("")
@@ -372,6 +397,9 @@ function HomePageContent() {
     setTempSelectedCategories([])
 
     setPagination((prev) => ({ ...prev, page: 1 }))
+    
+    // Clear saved filters
+    sessionStorage.removeItem('homeFilters')
   }
 
   // Show loading while checking profile completion or waiting for town
@@ -813,7 +841,6 @@ function HomePageContent() {
                         // Apply the temporary filters to actual filter states
                         setSelectedBrands(tempSelectedBrands)
                         setSelectedShops(tempSelectedShops)
-                        // If no towns selected, default to current user town
                         setSelectedTowns(tempSelectedTowns.length > 0 ? tempSelectedTowns : (userTown ? [userTown] : []))
                         setSelectedPriceRanges(tempSelectedPriceRanges)
                         setCustomMinPrice(tempCustomMinPrice)

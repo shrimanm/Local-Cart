@@ -162,8 +162,8 @@ export default function LoginForm() {
   const renderPhoneStep = () => (
     <form onSubmit={handleSendOTP} className="space-y-6">
       <div className="text-center mb-6">
-        <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-          <Phone className="h-8 w-8 text-blue-600" />
+        <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+          <Phone className="h-8 w-8 text-gray-700" />
         </div>
         <h3 className="text-xl font-semibold text-gray-900">Enter Your Mobile Number</h3>
         <p className="text-gray-600 mt-2">We'll send you an OTP to verify your number</p>
@@ -315,7 +315,7 @@ export default function LoginForm() {
           <div className="flex flex-col items-center space-y-3 mb-4">
             <img src="/logo.png" alt="LocalCart Logo" className="h-16 w-16 rounded-2xl shadow-lg" />
             <CardTitle className="text-2xl font-bold text-gray-900">
-              {step === "phone" ? "Welcome to LocalCart" : "Verify OTP"}
+              {step === "phone" ? <>Welcome to <span className="text-red-800">LocalCart</span></> : "Verify OTP"}
             </CardTitle>
           </div>
           <CardDescription className="text-gray-600">

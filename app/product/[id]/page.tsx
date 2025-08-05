@@ -389,7 +389,7 @@ function ProductPageContent() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => router.back()}
+          onClick={() => router.push('/home')}
           className="flex items-center hover:bg-gray-100 rounded-full p-2"
         >
           <ArrowLeft className="h-5 w-5 mr-2" />
