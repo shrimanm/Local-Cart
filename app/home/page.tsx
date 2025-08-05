@@ -432,56 +432,51 @@ function HomePageContent() {
           }}
         />
 
-        {/* Modern Filters and Sort */}
-        <div className="py-6">
-          <div className="bg-white rounded-2xl p-6 shadow-md border border-gray-100">
-            <div className="space-y-3">
-              {/* Filter and Sort Row */}
-              <div className="flex items-center gap-4">
-                {/* Modern Filter Toggle */}
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setShowFilters(!showFilters)} 
-                  className="px-3 py-2 rounded-xl border-2 hover:border-gray-400 transition-all duration-200 text-xs sm:text-sm whitespace-nowrap"
-                >
-                  <svg className="h-4 w-4 mr-2" viewBox="0 0 16 16" fill="currentColor">
-                    <rect x="1" y="2" width="14" height="1.5" rx="0.75" />
-                    <rect x="3" y="6" width="10" height="1.5" rx="0.75" />
-                    <rect x="5" y="10" width="6" height="1.5" rx="0.75" />
-                  </svg>
-                  {t('filters')}
-                </Button>
-
-                {/* Modern Sort Options */}
-                <div className="flex-1 min-w-0">
-                  <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-full sm:w-auto sm:min-w-[120px] lg:w-48 rounded-xl border-2 hover:border-gray-400 transition-all duration-200 text-xs sm:text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl">
-                      <SelectItem value="rating">{t('highestRated')}</SelectItem>
-                      <SelectItem value="createdAt">{t('newestFirst')}</SelectItem>
-                      <SelectItem value="price">{t('priceLowToHigh')}</SelectItem>
-                      <SelectItem value="-price">{t('priceHighToLow')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+        {/* Filter Controls */}
+        <div className="px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {/* Left Side - Filter and Clear */}
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setShowFilters(!showFilters)} 
+                className="px-3 py-1.5 rounded-lg border hover:border-gray-400 transition-all duration-200 text-xs whitespace-nowrap"
+              >
+                <svg className="h-3 w-3 mr-1.5" viewBox="0 0 16 16" fill="currentColor">
+                  <rect x="1" y="2" width="14" height="1.5" rx="0.75" />
+                  <rect x="3" y="6" width="10" height="1.5" rx="0.75" />
+                  <rect x="5" y="10" width="6" height="1.5" rx="0.75" />
+                </svg>
+                {t('filters')}
+              </Button>
               
-              {/* Clear All Button Row */}
-              <div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={resetFilters} 
-                  className="border-2 border-gray-200 hover:border-gray-400 text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-xl transition-all duration-200 text-xs sm:text-sm whitespace-nowrap"
-                >
-                  {t('clearAll')}
-                </Button>
-              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={resetFilters} 
+                className="border border-gray-200 hover:border-gray-400 text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-3 py-1.5 rounded-lg transition-all duration-200 text-xs whitespace-nowrap"
+              >
+                {t('clearAll')}
+              </Button>
+            </div>
+
+            {/* Right Side - Sort Options */}
+            <div className="min-w-0">
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-auto min-w-[120px] rounded-lg border hover:border-gray-400 transition-all duration-200 text-xs h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-lg">
+                  <SelectItem value="rating">{t('highestRated')}</SelectItem>
+                  <SelectItem value="createdAt">{t('newestFirst')}</SelectItem>
+                  <SelectItem value="price">{t('priceLowToHigh')}</SelectItem>
+                  <SelectItem value="-price">{t('priceHighToLow')}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
+        </div>
 
           {/* Mobile Filter Overlay */}
           {showFilters && (
@@ -862,8 +857,7 @@ function HomePageContent() {
               </div>
             </div>
           )}
-        </div>
-
+        
         {/* Products Grid */}
         <div className="max-w-7xl mx-auto">
           <div className="flex-1">
@@ -896,28 +890,7 @@ function HomePageContent() {
               </div>
             ) : (
               <>
-                {/* Modern Results Info */}
-                <div className="bg-white rounded-2xl p-6 shadow-lg mb-6 border border-gray-100">
-                  <div className="flex justify-between items-center">
-                    <p className="text-sm font-medium text-gray-700">
-                      {t('showing')} {products.length} {t('of')} {pagination.total} {t('products')}
-                    </p>
-                    {(searchQuery || selectedCategory !== "all") && (
-                      <div className="flex gap-2">
-                        {searchQuery && (
-                          <div className="bg-gray-100 px-3 py-1 rounded-full text-xs font-medium text-gray-700">
-                            Search: {searchQuery}
-                          </div>
-                        )}
-                        {selectedCategory !== "all" && (
-                          <div className="bg-gray-100 px-3 py-1 rounded-full text-xs font-medium text-gray-700">
-                            Category: {selectedCategory}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
+
 
                 {/* Products Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-6">
