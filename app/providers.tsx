@@ -60,6 +60,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("user")
     // Clear selected town when user logs out
     localStorage.removeItem("selectedTown")
+    // Clear saved filters when user logs out
+    sessionStorage.removeItem("homeFilters")
+    sessionStorage.removeItem("currentUserId")
     // Language preferences are now stored per user, so no need to clear on logout
   }
 

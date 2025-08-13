@@ -215,15 +215,15 @@ export default function LoginForm() {
   )
 
   const renderOTPStep = () => (
-    <form onSubmit={handleVerifyOTP} className="space-y-6">
+    <form onSubmit={handleVerifyOTP} className="space-y-4">
       {showOtpNotification && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <MessageSquare className="h-5 w-5 text-green-600 mr-2" />
+              <MessageSquare className="h-4 w-4 text-green-600 mr-2" />
               <div>
-                <p className="text-green-800 font-medium">Your OTP Code</p>
-                <p className="text-green-700 text-lg font-mono">{otpValue}</p>
+                <p className="text-green-800 font-medium text-sm">Your OTP Code</p>
+                <p className="text-green-700 text-base font-mono">{otpValue}</p>
               </div>
             </div>
             <Button
@@ -231,35 +231,35 @@ export default function LoginForm() {
               variant="ghost"
               size="sm"
               onClick={() => setShowOtpNotification(false)}
-              className="text-green-600 hover:text-green-800"
+              className="text-green-600 hover:text-green-800 p-1"
             >
               ×
             </Button>
           </div>
         </div>
       )}
-      <div className="flex items-center mb-4">
+      <div className="flex items-center mb-3">
         <Button 
           type="button" 
           variant="ghost" 
           onClick={handleCustomBack} 
-          className="p-2 hover:bg-gray-100"
+          className="p-1 hover:bg-gray-100"
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <span className="text-sm text-gray-600 ml-2">Back to phone number</span>
       </div>
       
-      <div className="text-center mb-6">
-        <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-green-200 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-          <MessageSquare className="h-8 w-8 text-green-600" />
+      <div className="text-center mb-4">
+        <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg">
+          <MessageSquare className="h-6 w-6 text-green-600" />
         </div>
-        <h3 className="text-xl font-semibold text-gray-900">Verify OTP</h3>
-        <p className="text-gray-600 mt-2">Enter the 6-digit code sent to +91 {phone}</p>
+        <h3 className="text-lg font-semibold text-gray-900">Verify OTP</h3>
+        <p className="text-gray-600 mt-1 text-sm">Enter the 6-digit code sent to +91 {phone}</p>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="otp" className="flex items-center gap-2">
+        <Label htmlFor="otp" className="flex items-center gap-2 text-sm">
           <Shield className="h-4 w-4" />
           Enter OTP
         </Label>
@@ -272,7 +272,7 @@ export default function LoginForm() {
             const value = e.target.value.replace(/\D/g, "").slice(0, 6)
             setOtp(value)
           }}
-          className="text-center text-2xl tracking-widest h-16"
+          className="text-center text-xl tracking-widest h-12"
           maxLength={6}
           required
         />
@@ -284,7 +284,7 @@ export default function LoginForm() {
           variant="link"
           onClick={handleResendOTP}
           disabled={resendTimer > 0 || loading}
-          className="text-gray-900 p-0 h-auto"
+          className="text-gray-900 p-0 h-auto text-sm"
         >
           {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : "Resend OTP"}
         </Button>
@@ -294,7 +294,7 @@ export default function LoginForm() {
       <Button
         type="submit"
         disabled={loading || otp.length !== 6}
-        className="w-full bg-gradient-to-r from-gray-900 to-gray-700 hover:from-gray-800 hover:to-gray-600 text-white shadow-lg h-12 text-lg"
+        className="w-full bg-gradient-to-r from-gray-900 to-gray-700 hover:from-gray-800 hover:to-gray-600 text-white shadow-lg h-12 text-base"
       >
         {loading ? (
           <div className="flex items-center gap-2">
@@ -309,13 +309,20 @@ export default function LoginForm() {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-white rounded-2xl shadow-xl border-0">
+    <div className="w-full">
+      <Card className="w-full bg-white rounded-2xl shadow-xl border-0">
         <CardHeader className="text-center pb-2">
-          <div className="flex flex-col items-center space-y-3 mb-4">
-            <img src="/logo.png" alt="LocalCart Logo" className="h-16 w-16 rounded-2xl shadow-lg" />
-            <CardTitle className="text-2xl font-bold text-gray-900">
-              {step === "phone" ? <>Welcome to <span className="text-red-800">LocalCart</span></> : "Verify OTP"}
+          <div className="mb-4">
+            <CardTitle className="text-2xl font-bold text-gray-900 tracking-tight">
+              {step === "phone" ? (
+                <span>
+                  <span className="text-gray-900 font-bold">Login</span>
+                  <span className="text-gray-500 font-normal"> or </span>
+                  <span className="text-gray-900 font-bold">Signup</span>
+                </span>
+              ) : (
+                <span className="text-gray-900 font-bold">Verify OTP</span>
+              )}
             </CardTitle>
           </div>
           <CardDescription className="text-gray-600">

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { useRouter } from "next/navigation"
+
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -10,33 +10,33 @@ const banners = [
   {
     id: 1,
     image: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=1200&h=600&fit=crop&crop=center",
-    title: "Women's Fashion",
+    title: "Women's Clothing",
     subtitle: "Trendy styles for every occasion",
-    category: "women",
+    category: "Women's Clothing",
     gradient: "from-pink-400/70 to-purple-500/70"
   },
   {
     id: 2,
     image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1200&h=600&fit=crop&crop=center",
-    title: "Men's Collection",
+    title: "Men's Clothing",
     subtitle: "Upgrade your wardrobe with style",
-    category: "men",
+    category: "Men's Clothing",
     gradient: "from-green-400/70 to-emerald-600/70"
   },
   {
     id: 3,
     image: "https://images.unsplash.com/photo-1503919545889-aef636e10ad4?w=1200&h=600&fit=crop&crop=center",
-    title: "Kids Fashion",
+    title: "Kids Clothing",
     subtitle: "Cute & comfortable styles for kids",
-    category: "kids",
+    category: "Kids Clothing",
     gradient: "from-orange-400/70 to-yellow-500/70"
   },
   {
     id: 4,
     image: "https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=1200&h=600&fit=crop&crop=center",
-    title: "Beauty & Care",
+    title: "Beauty & Personal Care",
     subtitle: "Premium cosmetics & skincare",
-    category: "beauty",
+    category: "Beauty & Personal Care",
     gradient: "from-rose-400/70 to-pink-600/70"
   },
   {
@@ -44,7 +44,7 @@ const banners = [
     image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=1200&h=600&fit=crop&crop=center",
     title: "Home & Living",
     subtitle: "Transform your space with style",
-    category: "home",
+    category: "Home & Living",
     gradient: "from-amber-400/70 to-orange-600/70"
   },
   {
@@ -52,7 +52,7 @@ const banners = [
     image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=1200&h=600&fit=crop&crop=center",
     title: "Footwear",
     subtitle: "Step up your shoe game",
-    category: "footwear",
+    category: "Footwear",
     gradient: "from-slate-600/70 to-gray-800/70"
   },
   {
@@ -60,7 +60,7 @@ const banners = [
     image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=1200&h=600&fit=crop&crop=center",
     title: "Accessories",
     subtitle: "Complete your look with style",
-    category: "accessories",
+    category: "Accessories",
     gradient: "from-purple-500/70 to-indigo-600/70"
   },
   {
@@ -68,7 +68,7 @@ const banners = [
     image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1200&h=600&fit=crop&crop=center",
     title: "Sports & Fitness",
     subtitle: "Gear up for your active lifestyle",
-    category: "sports",
+    category: "Sports & Fitness",
     gradient: "from-blue-500/70 to-cyan-600/70"
   },
   {
@@ -76,15 +76,19 @@ const banners = [
     image: "https://images.unsplash.com/photo-1498049794561-7780e7231661?w=1200&h=600&fit=crop&crop=center",
     title: "Electronics",
     subtitle: "Latest gadgets & tech accessories",
-    category: "electronics",
+    category: "Electronics",
     gradient: "from-gray-800/70 to-slate-900/70"
   }
 ]
 
-export default function BannerCarousel() {
+interface BannerCarouselProps {
+  showShopButton?: boolean
+}
+
+export default function BannerCarousel({ showShopButton = true }: BannerCarouselProps) {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isAutoPlaying, setIsAutoPlaying] = useState(true)
-  const router = useRouter()
+
 
   useEffect(() => {
     if (!isAutoPlaying) return
@@ -104,9 +108,7 @@ export default function BannerCarousel() {
     setCurrentSlide((prev) => (prev - 1 + banners.length) % banners.length)
   }
 
-  const handleBannerClick = (category: string) => {
-    router.push(`/home?category=${category}`)
-  }
+
 
   return (
     <div
@@ -117,10 +119,9 @@ export default function BannerCarousel() {
       {banners.map((banner, index) => (
         <div
           key={banner.id}
-          className={`absolute inset-0 transition-transform duration-500 ease-in-out cursor-pointer ${
+          className={`absolute inset-0 transition-transform duration-500 ease-in-out ${
             index === currentSlide ? "translate-x-0" : index < currentSlide ? "-translate-x-full" : "translate-x-full"
           }`}
-          onClick={() => handleBannerClick(banner.category)}
         >
           <Image
             src={banner.image}
@@ -134,12 +135,7 @@ export default function BannerCarousel() {
             <div className="max-w-2xl px-4">
               <h2 className="text-3xl md:text-5xl font-bold mb-4 drop-shadow-lg">{banner.title}</h2>
               <p className="text-lg md:text-xl mb-6 drop-shadow-md opacity-90">{banner.subtitle}</p>
-              <Button
-                size="lg"
-                className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white border border-white/30 px-8 py-3 text-lg font-semibold transition-all duration-300 hover:scale-105"
-              >
-                Shop Now
-              </Button>
+
             </div>
           </div>
         </div>

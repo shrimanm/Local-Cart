@@ -91,6 +91,8 @@ function HomePageContent() {
       return
     }
 
+
+
     // Profile is complete, allow home page to load
     setProfileChecking(false)
   }, [user, router])
@@ -101,8 +103,30 @@ function HomePageContent() {
       fetchWishlist()
       fetchFilterOptions()
       loadFilters()
+      
+      // Handle category from URL parameter
+      const categoryParam = searchParams.get('category')
+      if (categoryParam) {
+        const trimmedCategory = categoryParam.trim()
+        setSelectedCategories([trimmedCategory])
+        
+        // Also set the category tab based on banner category
+        const categoryMapping: Record<string, string> = {
+          "Women's Clothing": "women",
+          "Men's Clothing": "men", 
+          "Kids Clothing": "kids",
+          "Beauty & Personal Care": "beauty",
+          "Home & Living": "home",
+          "Footwear": "footwear",
+          "Accessories": "accessories",
+          "Sports & Fitness": "sports",
+          "Electronics": "electronics"
+        }
+        
+        // Tab selection is now handled in the fetchProducts useEffect
+      }
     }
-  }, [user, token])
+  }, [user, token, searchParams])
 
   // Sync all temp filters with actual filters when filter opens
   useEffect(() => {
